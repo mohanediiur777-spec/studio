@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/useApp';
-import { ZOHO_SERVICES, ZOHO_ONE_ID, ZOHO_ONE_PRICE } from '@/lib/constants';
+import { ZOHO_SERVICES, ZOHO_ONE_ID, ZOHO_ONE_PRICE_ALL_EMPLOYEES, ZOHO_ONE_PRICE_FLEXIBLE } from '@/lib/constants';
 import { logPricingView } from '@/lib/actions';
 import StepContainer from '@/components/tool/StepContainer';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,19 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, CheckCircle, Tag } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { useTranslation } from '@/context/TranslationContext';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 export default function PricingPage() {
   const router = useRouter();
   const { selectedServices: serviceIds, setSelectedServices, pricing, setPricing } = useApp();
+  const { t, lang } = useTranslation();
   
   const [showZohoOne, setShowZohoOne] = useState(pricing?.useZohoOne || false);
+  const [zohoOneTier, setZohoOneTier] = useState<'all' | 'flexible'>(pricing?.zohoOneTier || 'all');
+
+  const zohoOnePrice = zohoOneTier === 'all' ? ZOHO_ONE_PRICE_ALL_EMPLOYEES : ZOHO_ONE_PRICE_FLEXIBLE;
 
   useEffect(() => {
     if (!serviceIds || serviceIds.length === 0) {
@@ -44,8 +51,6 @@ export default function PricingPage() {
   }, [nonStandaloneServices]);
 
 
-  const isZohoOneSelected = useMemo(() => serviceIds?.includes(ZOHO_ONE_ID), [serviceIds]);
-
   const handleZohoOneToggle = (checked: boolean) => {
     setShowZohoOne(checked);
     const currentServices = new Set(serviceIds);
@@ -57,8 +62,8 @@ export default function PricingPage() {
     setSelectedServices(Array.from(currentServices));
   };
 
-  const finalCost = showZohoOne ? ZOHO_ONE_PRICE : individualCost;
-  const savings = showZohoOne ? individualCost - ZOHO_ONE_PRICE : 0;
+  const finalCost = showZohoOne ? zohoOnePrice : individualCost;
+  const savings = showZohoOne ? individualCost - zohoOnePrice : 0;
 
   const handleSubmit = () => {
     setPricing({
@@ -66,20 +71,22 @@ export default function PricingPage() {
         totalCost: finalCost,
         useZohoOne: showZohoOne,
         savings,
+        zohoOneTier,
+        currency: 'EGP'
     });
     router.push('/tool/proposal');
   };
 
   return (
     <StepContainer
-      title="Pricing & Bundling"
-      description="Review the costs, compare with Zoho One, and finalize your service package."
+      title={t.pricing.title}
+      description={t.pricing.description}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Selected Services</CardTitle>
+              <CardTitle>{t.pricing.selectedServices}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-4">
@@ -89,15 +96,15 @@ export default function PricingPage() {
                       <service.icon className="h-5 w-5 text-muted-foreground" />
                       <span>{service.name}</span>
                     </div>
-                    <span className="font-mono font-medium">${service.price}/mo</span>
+                    <span className="font-mono font-medium">{service.price.toFixed(2)} {t.common.currency}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
             <CardFooter>
                 <div className="flex justify-between items-center w-full font-bold">
-                    <span>Individual Total</span>
-                    <span className="font-mono">${individualCost.toFixed(2)}/mo</span>
+                    <span>{t.pricing.individualTotal}</span>
+                    <span className="font-mono">{individualCost.toFixed(2)} {t.common.currency}</span>
                 </div>
             </CardFooter>
           </Card>
@@ -105,9 +112,9 @@ export default function PricingPage() {
           {nonStandaloneServices.length > 0 && !showZohoOne && (
              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Bundling Required</AlertTitle>
+                <AlertTitle>{t.pricing.bundlingRequiredTitle}</AlertTitle>
                 <AlertDescription>
-                  You've selected services that require Zoho One. Please enable the Zoho One bundle to proceed.
+                  {t.pricing.bundlingRequiredDescription}
                 </AlertDescription>
               </Alert>
           )}
@@ -117,34 +124,49 @@ export default function PricingPage() {
           <Card className={`transition-all ${showZohoOne ? 'border-primary shadow-lg' : ''}`}>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Zoho One Bundle</CardTitle>
+                <CardTitle>{t.pricing.zohoOneBundle}</CardTitle>
                 <Switch checked={showZohoOne} onCheckedChange={handleZohoOneToggle} disabled={nonStandaloneServices.length > 0} />
               </div>
-              <CardDescription>All apps, one unified system.</CardDescription>
+              <CardDescription>{t.pricing.zohoOneDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-baseline">
-                <span className="text-muted-foreground">Price</span>
-                <span className="font-mono text-2xl font-bold">${ZOHO_ONE_PRICE.toFixed(2)}/mo</span>
+                <span className="text-muted-foreground">{t.pricing.price}</span>
+                <span className="font-mono text-2xl font-bold">{zohoOnePrice.toFixed(2)} {t.common.currency}</span>
               </div>
-              <Separator />
-               {showZohoOne && (
+              {showZohoOne && (
+                <>
+                <Separator />
+                <RadioGroup value={zohoOneTier} onValueChange={(v) => setZohoOneTier(v as 'all' | 'flexible')}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="all" id="all" />
+                        <Label htmlFor="all">{t.pricing.allEmployees}</Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="flexible" id="flexible" />
+                        <Label htmlFor="flexible">{t.pricing.flexibleUser}</Label>
+                    </div>
+                </RadioGroup>
+                <Separator />
+                {
                 savings > 0 ? (
                   <div className="flex items-center gap-2 text-green-600">
                     <Tag className="h-4 w-4" />
-                    <span className="font-medium">You save ${savings.toFixed(2)}/mo!</span>
+                    <span className="font-medium">{t.pricing.savingsText.replace('{amount}', savings.toFixed(2))}</span>
                   </div>
                 ) : savings < 0 ? (
                     <div className="flex items-center gap-2 text-amber-600">
                         <AlertTriangle className="h-4 w-4" />
-                        <span className="font-medium">Costs ${(-savings).toFixed(2)}/mo more but includes all apps.</span>
+                        <span className="font-medium">{t.pricing.moreCostText.replace('{amount}', (-savings).toFixed(2))}</span>
                     </div>
                 ) : (
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <CheckCircle className="h-4 w-4" />
-                        <span className="font-medium">All-in-one suite enabled.</span>
+                        <span className="font-medium">{t.pricing.allInOneEnabled}</span>
                     </div>
                 )
+              }
+              </>
               )}
             </CardContent>
           </Card>
@@ -152,10 +174,10 @@ export default function PricingPage() {
       </div>
       <div className="mt-8 flex justify-between">
           <Button variant="outline" onClick={() => router.back()}>
-            Back
+            {t.common.back}
           </Button>
           <Button onClick={handleSubmit} disabled={nonStandaloneServices.length > 0 && !showZohoOne}>
-            Generate Proposal
+            {t.common.generateProposal}
           </Button>
         </div>
     </StepContainer>

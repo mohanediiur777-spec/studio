@@ -46,7 +46,7 @@ export default function Home() {
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="font-bold">
+                  <Button asChild size="lg" variant="secondary">
                     <Link href="/login">Sales Rep Login</Link>
                   </Button>
                 </div>

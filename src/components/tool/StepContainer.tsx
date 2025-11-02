@@ -4,14 +4,20 @@ interface StepContainerProps {
   title: string;
   description: string;
   children: React.ReactNode;
+  headerContent?: React.ReactNode;
 }
 
-export default function StepContainer({ title, description, children }: StepContainerProps) {
+export default function StepContainer({ title, description, children, headerContent }: StepContainerProps) {
   return (
     <Card className="animate-in fade-in duration-500">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <div className="flex justify-between items-start">
+          <div className="space-y-1.5">
+            <CardTitle className="text-2xl font-headline">{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          {headerContent}
+        </div>
       </CardHeader>
       <CardContent>
         {children}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, UserCircle } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 import { useApp } from '@/hooks/useApp';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +27,7 @@ export default function Header() {
   };
   
   const getInitials = (name: string) => {
+    if (!name) return '';
     const names = name.split(' ');
     if (names.length > 1) {
         return names[0][0] + names[names.length - 1][0];
@@ -37,9 +38,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card">
       <div className="container flex h-16 items-center px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-4">
           <Logo />
-          <span className="font-headline font-semibold text-lg hidden sm:inline-block">e&amp; Zoho Sales Tool</span>
+          <div className="h-8 w-px bg-border"></div>
+          <img src="https://i.ibb.co/dG0vp1B/zoho-logo.png" alt="Zoho" className="h-6"/>
         </Link>
         <div className="ml-auto">
           {user ? (
@@ -69,7 +71,7 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-             <Button asChild variant="outline">
+             <Button asChild variant="secondary">
                 <Link href="/login">Sign In</Link>
             </Button>
           )}

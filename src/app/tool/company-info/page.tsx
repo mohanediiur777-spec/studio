@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import StepContainer from '@/components/tool/StepContainer';
+import { useTranslation } from '@/context/TranslationContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const formSchema = z.object({
   salesRepName: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -23,6 +25,7 @@ const formSchema = z.object({
 export default function CompanyInfoPage() {
   const router = useRouter();
   const { user, companyInfo, setCompanyInfo } = useApp();
+  const { t, lang } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,20 +46,21 @@ export default function CompanyInfoPage() {
 
   return (
     <StepContainer
-      title="Company Information"
-      description="Start by telling us about the company you are creating a proposal for."
+      title={t.companyInfo.title}
+      description={t.companyInfo.description}
+      headerContent={<LanguageSwitcher />}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField
               control={form.control}
               name="salesRepName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sales Rep Name</FormLabel>
+                  <FormLabel>{t.companyInfo.salesRepName}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your Name" {...field} />
+                    <Input placeholder={t.companyInfo.salesRepNamePlaceholder} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -67,9 +71,9 @@ export default function CompanyInfoPage() {
               name="companyName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Company Name</FormLabel>
+                  <FormLabel>{t.companyInfo.companyName}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Client Company Inc." {...field} />
+                    <Input placeholder={t.companyInfo.companyNamePlaceholder} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -82,7 +86,7 @@ export default function CompanyInfoPage() {
             name="companyWebsite"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Company Website</FormLabel>
+                <FormLabel>{t.companyInfo.companyWebsite}</FormLabel>
                 <FormControl>
                   <Input placeholder="https://example.com" {...field} />
                 </FormControl>
@@ -92,7 +96,7 @@ export default function CompanyInfoPage() {
           />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Social Media (Optional)</h3>
+            <h3 className="text-lg font-medium">{t.companyInfo.socialMedia}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <FormField
                 control={form.control}
@@ -137,7 +141,7 @@ export default function CompanyInfoPage() {
           </div>
           
           <div className="flex justify-end">
-            <Button type="submit">Next Step</Button>
+            <Button type="submit">{t.common.nextStep}</Button>
           </div>
         </form>
       </Form>

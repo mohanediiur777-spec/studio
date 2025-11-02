@@ -1,60 +1,85 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/useApp';
 import { recommendZohoServices } from '@/ai/flows/recommend-zoho-services';
 import { ZOHO_SERVICES, ZohoService } from '@/lib/constants';
 import StepContainer from '@/components/tool/StepContainer';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, PlusCircle, MinusCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useTranslation } from '@/context/TranslationContext';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const ServiceCard = ({
   service,
   isSelected,
   onToggle,
   isRecommended,
+  lang
 }: {
   service: ZohoService;
   isSelected: boolean;
   onToggle: (id: string, selected: boolean) => void;
   isRecommended: boolean;
-}) => (
-  <Card
-    className={`transition-all duration-300 ${isSelected ? 'border-primary shadow-lg' : ''}`}
-  >
-    <CardHeader>
-      <div className="flex justify-between items-start gap-4">
-        <div className="flex items-center gap-4">
-          <div className="bg-secondary p-3 rounded-lg">
-            <service.icon className="h-6 w-6 text-primary" />
+  lang: 'en' | 'ar';
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const description = lang === 'ar' ? service.descriptionAr : service.description;
+  const longDescription = lang === 'ar' ? service.longDescriptionAr : service.longDescription;
+
+
+  return (
+  <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <Card
+      className={`transition-all duration-300 ${isSelected ? 'border-primary shadow-lg' : ''}`}
+    >
+      <CardHeader>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-secondary/20 p-3 rounded-lg">
+              <service.icon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-headline">{service.name}</CardTitle>
+              <CardDescription className="text-xs">{service.category}</CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg font-headline">{service.name}</CardTitle>
-            <CardDescription className="text-xs">{service.category}</CardDescription>
-          </div>
+          <Switch checked={isSelected} onCheckedChange={(checked) => onToggle(service.id, checked)} />
         </div>
-        <Switch checked={isSelected} onCheckedChange={(checked) => onToggle(service.id, checked)} />
-      </div>
-      <CardDescription className="pt-2">{service.description}</CardDescription>
-      <div className="flex gap-2 pt-2">
-        {isRecommended && <Badge variant="secondary">Recommended</Badge>}
-        {!service.isStandalone && <Badge variant="outline">Requires Zoho One</Badge>}
-      </div>
-    </CardHeader>
-  </Card>
-);
+        <CardDescription className="pt-2">{description}</CardDescription>
+        <div className="flex gap-2 pt-2 items-center">
+          {isRecommended && <Badge variant="secondary">Recommended</Badge>}
+          {!service.isStandalone && <Badge variant="outline">Requires Zoho One</Badge>}
+           <CollapsibleTrigger asChild>
+                <Button variant="link" size="sm" className="ml-auto p-0 h-auto">
+                    {isOpen ? <MinusCircle className="mr-1 h-4 w-4" /> : <PlusCircle className="mr-1 h-4 w-4" />}
+                    {isOpen ? 'Show Less' : 'Show More'}
+                </Button>
+            </CollapsibleTrigger>
+        </div>
+      </CardHeader>
+      <CollapsibleContent>
+        <CardContent>
+            <div className="prose prose-sm dark:prose-invert text-muted-foreground" dangerouslySetInnerHTML={{ __html: longDescription }}/>
+        </CardContent>
+      </CollapsibleContent>
+    </Card>
+  </Collapsible>
+)};
 
 export default function ServicesPage() {
   const router = useRouter();
   const { industryInfo, selectedServices: initialServices, setSelectedServices } = useApp();
   const { toast } = useToast();
+  const { t, lang } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,8 +119,8 @@ export default function ServicesPage() {
 
       } catch (err) {
         console.error(err);
-        setError('Could not get AI recommendations. Please select services manually.');
-        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not get AI recommendations.' });
+        setError(t.services.error);
+        toast({ variant: 'destructive', title: t.services.errorTitle, description: t.services.error });
         
         const initialSelection: Record<string, boolean> = {};
         ZOHO_SERVICES.forEach(service => {
@@ -109,7 +134,7 @@ export default function ServicesPage() {
     };
 
     fetchRecommendations();
-  }, [industryInfo, router, toast, initialServices]);
+  }, [industryInfo, router, toast, initialServices, t]);
 
   const handleToggle = (id: string, isSelected: boolean) => {
     setInternalSelectedServices(prev => ({ ...prev, [id]: isSelected }));
@@ -135,14 +160,14 @@ export default function ServicesPage() {
 
   return (
     <StepContainer
-      title="Service Recommendations"
-      description="Based on the challenges, we recommend the following services. Feel free to adjust the selection."
+      title={t.services.title}
+      description={t.services.description}
     >
-      <div className="space-y-8">
+      <div className="space-y-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         {error && (
             <Alert variant="destructive" className="mt-4">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>{t.services.errorTitle}</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -168,15 +193,16 @@ export default function ServicesPage() {
                   isSelected={!!selectedServices[service.id]}
                   onToggle={handleToggle}
                   isRecommended={recommendedServiceIds.includes(service.id)}
+                  lang={lang}
                 />
               ))}
         </div>
         <div className="flex justify-between">
           <Button variant="outline" onClick={() => router.back()}>
-            Back
+            {t.common.back}
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            Next Step
+            {t.common.nextStep}
           </Button>
         </div>
       </div>

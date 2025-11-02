@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
+import { translations, Translation } from './translations';
 
 // Define types for the state
 type User = {
@@ -26,6 +27,8 @@ type PricingInfo = {
     totalCost: number;
     useZohoOne: boolean;
     savings: number;
+    zohoOneTier: 'all' | 'flexible';
+    currency: 'EGP';
 }
 
 type AppState = {
@@ -35,6 +38,7 @@ type AppState = {
   industryInfo: IndustryInfo | null;
   selectedServices: string[] | null;
   pricing: PricingInfo | null;
+  lang: 'en' | 'ar';
 };
 
 // Define context type
@@ -45,6 +49,8 @@ type AppContextType = AppState & {
   setSelectedServices: (services: string[]) => void;
   setPricing: (pricing: PricingInfo) => void;
   resetApp: () => void;
+  setLang: (lang: 'en' | 'ar') => void;
+  t: Translation;
 };
 
 const initialState: AppState = {
@@ -54,6 +60,7 @@ const initialState: AppState = {
   industryInfo: null,
   selectedServices: null,
   pricing: null,
+  lang: 'en',
 };
 
 export const AppContext = createContext<AppContextType>({
@@ -64,6 +71,8 @@ export const AppContext = createContext<AppContextType>({
   setSelectedServices: () => {},
   setPricing: () => {},
   resetApp: () => {},
+  setLang: () => {},
+  t: translations.en,
 });
 
 const LOCAL_STORAGE_KEY = 'zohoSalesToolState';
@@ -75,7 +84,8 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
     try {
       const storedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedState) {
-        setState({ ...JSON.parse(storedState), isInitialized: true });
+        const parsedState = JSON.parse(storedState);
+        setState({ ...parsedState, isInitialized: true });
       } else {
         setState(s => ({ ...s, isInitialized: true }));
       }
@@ -101,14 +111,16 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
   const setIndustryInfo = (info: IndustryInfo) => setState(prev => ({ ...prev, industryInfo: info, selectedServices: null, pricing: null }));
   const setSelectedServices = (services: string[]) => setState(prev => ({ ...prev, selectedServices: services, pricing: null }));
   const setPricing = (pricing: PricingInfo) => setState(prev => ({ ...prev, pricing }));
+  const setLang = (lang: 'en' | 'ar') => setState(prev => ({ ...prev, lang }));
 
   const resetApp = useCallback(() => {
-    const user = state.user;
+    const { user, lang } = state;
     const salesRepName = state.companyInfo?.salesRepName || user?.name || '';
-    const resetState = { 
+    const resetState: AppState = { 
         ...initialState, 
         isInitialized: true,
         user,
+        lang,
         companyInfo: {
             salesRepName,
             companyName: '',
@@ -124,7 +136,7 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
     } catch (error) {
         console.error('Failed to reset localStorage', error);
     }
-  }, [state.user, state.companyInfo]);
+  }, [state.user, state.companyInfo, state.lang]);
 
   return (
     <AppContext.Provider
@@ -136,6 +148,8 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
         setSelectedServices,
         setPricing,
         resetApp,
+        setLang,
+        t: translations[state.lang],
       }}
     >
       {children}

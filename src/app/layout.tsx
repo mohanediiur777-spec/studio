@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { AppProvider } from '@/components/AppProvider';
 import { Toaster } from '@/components/ui/toaster';
+import { TranslationProvider } from '@/context/TranslationContext';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -25,8 +26,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background min-h-screen flex flex-col">
         <AppProvider>
-          {children}
-          <Toaster />
+          <TranslationProvider>
+            {children}
+            <Toaster />
+          </TranslationProvider>
         </AppProvider>
       </body>
     </html>
