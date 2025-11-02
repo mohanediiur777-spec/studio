@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/recommend-zoho-services.ts';
+import '@/ai/flows/auto-detect-industry-from-website.ts';
+import '@/ai/flows/get-industry-challenges.ts';
