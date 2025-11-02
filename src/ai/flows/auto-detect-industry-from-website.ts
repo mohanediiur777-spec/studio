@@ -9,7 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {extractTextFromWebsite} from '../../services/website-extractor';
+import {extractTextFromWebsite} from '@/services/website-extractor';
 
 const DetectIndustryInputSchema = z.object({
   companyWebsite: z.string().describe('The URL of the company website.'),
