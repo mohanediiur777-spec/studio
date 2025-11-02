@@ -9,10 +9,11 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {extractTextFromWebsite} from '@/services/website-extractor';
+import {extractTextFromWebsite} from '../../services/website-extractor';
 
 const DetectIndustryInputSchema = z.object({
   companyWebsite: z.string().describe('The URL of the company website.'),
+  websiteContent: z.string().optional(),
 });
 export type DetectIndustryInput = z.infer<typeof DetectIndustryInputSchema>;
 
@@ -21,13 +22,13 @@ const DetectIndustryOutputSchema = z.object({
 });
 export type DetectIndustryOutput = z.infer<typeof DetectIndustryOutputSchema>;
 
-export async function detectIndustryFromWebsite(input: DetectIndustryInput): Promise<DetectIndustryOutput> {
+export async function detectIndustryFromWebsite(input: {companyWebsite: string}): Promise<DetectIndustryOutput> {
   return detectIndustryFromWebsiteFlow(input);
 }
 
 const prompt = ai.definePrompt({
   name: 'detectIndustryPrompt',
-  input: {schema: DetectIndustryInputSchema},
+  input: {schema: z.object({ websiteContent: z.string() })},
   output: {schema: DetectIndustryOutputSchema},
   prompt: `You are an expert in identifying the industry of a company based on its website content.\n\nAnalyze the following website content and determine the most likely industry the company operates in. Return ONLY the industry name, do not include any other text.\n\nWebsite Content: {{{websiteContent}}}`,
 });
@@ -40,6 +41,11 @@ const detectIndustryFromWebsiteFlow = ai.defineFlow(
   },
   async input => {
     const websiteContent = await extractTextFromWebsite(input.companyWebsite);
+
+    if (!websiteContent) {
+        return { industry: '' };
+    }
+
     const {output} = await prompt({websiteContent});
     return {
       industry: output!.industry,
