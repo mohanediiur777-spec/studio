@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/useApp';
 import Header from '@/components/Header';
 import ToolStepper from '@/components/tool/ToolStepper';
@@ -14,20 +14,33 @@ export default function ToolLayout({
 }>) {
   const { user, isInitialized } = useApp();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (isInitialized && !user) {
+    // Only enforce login for steps after company-info
+    if (isInitialized && !user && pathname !== '/tool/company-info') {
       router.replace('/login');
     }
-  }, [user, isInitialized, router]);
+  }, [user, isInitialized, router, pathname]);
 
-  if (!isInitialized || !user) {
+  // Don't show a full-screen loader for the initial step if the user isn't logged in.
+  // The page can be used by guest users.
+  if (isInitialized && !user && pathname !== '/tool/company-info') {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
+  
+  if (!isInitialized) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen">
