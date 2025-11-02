@@ -12,10 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Download, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from '@/context/TranslationContext';
+import { ZOHO_SERVICES } from '@/lib/constants';
 
 export default function ProposalPage() {
   const router = useRouter();
-  const { companyInfo, pricing, resetApp } = useApp();
+  const { companyInfo, industryInfo, pricing, resetApp, selectedServices } = useApp();
   const { toast } = useToast();
   const { t, lang, setLang } = useTranslation();
 
@@ -25,21 +26,83 @@ export default function ProposalPage() {
     }
   }, [companyInfo, pricing, router]);
 
-  if (!companyInfo || !pricing) {
+  if (!companyInfo || !pricing || !industryInfo) {
     return null;
   }
+  
+  const generateProposalText = (type: 'quick' | 'detailed') => {
+    const servicesInProposal = ZOHO_SERVICES.filter(s => selectedServices?.includes(s.id));
+    let proposal = '';
+
+    if (type === 'quick') {
+        proposal += `${t.proposal.title}\n`;
+        proposal += `==================================\n\n`;
+        proposal += `${t.proposal.preparedFor}: ${companyInfo.companyName}\n`;
+        proposal += `${t.proposal.preparedBy}: ${companyInfo.salesRepName}\n\n`;
+        proposal += `----------------------------------\n`;
+        proposal += `**${t.proposal.finalPackage}**\n`;
+        proposal += `${t.proposal.totalCost}: ${pricing.totalCost.toFixed(2)} ${t.common.currency}\n`;
+        if (pricing.useZohoOne) {
+            proposal += `${t.pricing.zohoOneBundle}\n`;
+            if (pricing.savings > 0) {
+              proposal += `${t.proposal.savings}: ${pricing.savings.toFixed(2)} ${t.common.currency}\n`;
+            }
+        } else {
+            proposal += `${t.proposal.services}: ${pricing.services.join(', ')}\n`;
+        }
+    } else {
+        proposal += `# ${t.proposal.title}\n\n`;
+        proposal += `## ${t.proposal.clientInfo}\n`;
+        proposal += `- **${t.proposal.preparedFor}:** ${companyInfo.companyName}\n`;
+        proposal += `- **${t.proposal.website}:** ${companyInfo.companyWebsite}\n`;
+        proposal += `- **${t.proposal.preparedBy}:** ${companyInfo.salesRepName}\n\n`;
+        proposal += `## Industry & Challenges\n`;
+        proposal += `**Industry:** ${industryInfo.industry}\n`;
+        proposal += `**General Challenges:**\n${industryInfo.generalChallenges.map(c => `- ${c}`).join('\n')}\n\n`;
+        if (industryInfo.specificChallenges) {
+            proposal += `**Client-Specific Challenges:**\n${industryInfo.specificChallenges}\n\n`;
+        }
+        proposal += `## Recommended Solution\n\n`;
+        if (pricing.useZohoOne) {
+            proposal += `### ${t.pricing.zohoOneBundle}\n`;
+            proposal += `The comprehensive Zoho One suite is recommended to address your needs with a unified platform.\n\n`;
+        } else {
+            proposal += `### ${t.proposal.customPackage}\n`;
+            proposal += `Based on the identified challenges, the following services are recommended:\n\n`;
+            servicesInProposal.forEach(service => {
+                proposal += `#### ${service.name}\n`;
+                proposal += `${lang === 'ar' ? service.descriptionAr : service.description}\n\n`;
+            });
+        }
+        proposal += `## Pricing Summary\n`;
+        proposal += `**${t.proposal.totalCost}:** ${pricing.totalCost.toFixed(2)} ${t.common.currency}\n`;
+        if (pricing.useZohoOne && pricing.savings > 0) {
+            proposal += `**${t.proposal.savings}:** ${pricing.savings.toFixed(2)} ${t.common.currency}\n`;
+        }
+    }
+    return proposal;
+  };
 
   const handleDownload = (type: 'quick' | 'detailed') => {
     logProposalDownload({ type, lang });
+
+    const proposalText = generateProposalText(type);
+    const blob = new Blob([proposalText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Zoho_Proposal_${companyInfo.companyName.replace(/\s+/g, '_')}_${type}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
     toast({
       title: t.proposal.downloadInitiated,
       description: t.proposal.downloadDescription
         .replace('{type}', type)
         .replace('{lang}', lang === 'en' ? 'English' : 'Arabic'),
     });
-    // In a real app, you would generate a PDF here.
-    // For this prototype, we just show a toast.
-    console.log(`Downloading ${type} proposal in ${lang}`);
   };
   
   const handleNewProposal = () => {
@@ -123,10 +186,10 @@ export default function ProposalPage() {
                 </CardHeader>
                 <CardContent className="flex flex-col sm:flex-row gap-4">
                     <Button size="lg" className="flex-1" onClick={() => handleDownload('quick')}>
-                        <FileText className="mr-2 h-4 w-4" /> {text.quick} (.pdf)
+                        <FileText className="mr-2 h-4 w-4" /> {text.quick} (.txt)
                     </Button>
                     <Button size="lg" variant="secondary" className="flex-1" onClick={() => handleDownload('detailed')}>
-                         <FileText className="mr-2 h-4 w-4" /> {text.detailed} (.pdf)
+                         <FileText className="mr-2 h-4 w-4" /> {text.detailed} (.txt)
                     </Button>
                 </CardContent>
             </Card>
