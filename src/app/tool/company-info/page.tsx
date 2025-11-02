@@ -46,7 +46,7 @@ export default function CompanyInfoPage() {
   }
 
   // Ensure translations are loaded before rendering the form
-  if (!t.companyInfo) {
+  if (!t || !t.companyInfo) {
     return (
       <div className="flex h-64 w-full items-center justify-center">
         <LoadingSpinner />
