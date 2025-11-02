@@ -17,15 +17,12 @@ export default function ToolLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    // Only enforce login for steps after company-info
     if (isInitialized && !user && pathname !== '/tool/company-info') {
       router.replace('/login');
     }
   }, [user, isInitialized, router, pathname]);
 
-  // Don't show a full-screen loader for the initial step if the user isn't logged in.
-  // The page can be used by guest users.
-  if (isInitialized && !user && pathname !== '/tool/company-info') {
+  if (!isInitialized) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner />
@@ -33,14 +30,15 @@ export default function ToolLayout({
     );
   }
   
-  if (!isInitialized) {
+  // If we are not on the company-info page and we don't have a user yet,
+  // show a loader while we redirect.
+  if (!user && pathname !== '/tool/company-info') {
      return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
-
 
   return (
     <div className="flex flex-col min-h-screen">
