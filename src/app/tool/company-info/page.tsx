@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import StepContainer from '@/components/tool/StepContainer';
 import { useTranslation } from '@/context/TranslationContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const formSchema = z.object({
   salesRepName: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -42,6 +43,15 @@ export default function CompanyInfoPage() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     setCompanyInfo(values);
     router.push('/tool/industry');
+  }
+
+  // Ensure translations are loaded before rendering the form
+  if (!t.companyInfo) {
+    return (
+      <div className="flex h-64 w-full items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
