@@ -1,13 +1,9 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-    // CRITICAL: Enables static HTML export for GitHub Pages
-    output: 'export', 
+    // 🛑 REMOVE 'output: 'export'': Vercel runs a full server, so you don't need a static export.
+    // 🛑 REMOVE 'basePath': Vercel deploys to a root domain (your-app-name.vercel.app), so no subpath is needed.
 
-    // CRITICAL: Sets the path prefix for assets and links
-    // ⬇️ REPLACE <your-repo-name> with the exact name of your GitHub repository
-    basePath: '/<your-repo-name>', 
-    
     typescript: {
         ignoreBuildErrors: true,
     },
@@ -15,8 +11,7 @@ const nextConfig: NextConfig = {
         ignoreDuringBuilds: true,
     },
     images: {
-        // MANDATORY for static export
-        unoptimized: true, 
+        // 🛑 REMOVE 'unoptimized: true': Vercel provides excellent image optimization, so we turn this off.
         remotePatterns: [
             {
                 protocol: 'https',
@@ -37,7 +32,6 @@ const nextConfig: NextConfig = {
                 pathname: '/**',
             },
             {
-                // Your image source from the index.html content
                 protocol: 'https',
                 hostname: 'i.ibb.co',
                 port: '',
@@ -45,6 +39,7 @@ const nextConfig: NextConfig = {
             },
         ],
     },
+    // The rest of the config is fine
 };
 
 export default nextConfig;
